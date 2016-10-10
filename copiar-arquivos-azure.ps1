@@ -2,7 +2,7 @@
 # E-mail: danilorpneves@outlook.com
 # -------------------------------------------
 # Obervações: 
-# O escript tem como objetivo enviar vários arquivos de uma determinada pasta, para uma pasta compartilhada no Azure.
+# O script tem como objetivo enviar vários arquivos de uma determinada pasta, para uma pasta compartilhada no Azure.
 # URL Artigo Microsoft Azure: https://azure.microsoft.com/pt-br/documentation/articles/storage-dotnet-how-to-use-files/
 #
 # Leia todos os comentários até o final do script
