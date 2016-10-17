@@ -27,59 +27,133 @@
 $pasta_azure = 'https://storage.file.core.windows.net/nome_pasta_compartilhada'
 $chave_azure = 'nksOj6GMdBybtJ+dOxRwogNpkpA=='
 
-# Origem da pasta local
+
+###### Definições de pastas ######
+##Observação: Não esquecer de cr.
+#
+#Pasta da origem dos arquivos
 $pasta_origem = 'C:\Azure'
 
+#Pasta onde será movido os arquivos para cópia
+$pasta_arquivos = 'C:\Azure\arquivos'
+
+#Pasta de logs
+$pasta_arquivo_log = 'C:\Azure\Logs\'
+
+
+
+
 # Tipo de arquivo a ser enviado
-$tipo_arquivo = '*.JPG'
+$tipo_arquivo = ".txt"
+
 
 # Destino que será armazenado os logs de importação.
-$dest_arquivo_log = 'C:\Azure\copia-azure.log'
+$dest_arquivo_log = 'C:\Azure\Logs\copia-azure.log'
+$arquivo_lot_log = 'C:\Azure\Arquivos\lote.txt'
+$arquivo_azure_log = 'C:\Azure\log-arquivos-azure.log'
 
 
-# Nome da lista de arquivos que serão enviados.
-$consulta_arquivo = 'files.txt'
 
 # Pasta da onde fica o arquivo de execução AzCopy
 $pasta_azcopy = 'C:\Program Files (x86)\Microsoft SDKs\Azure\AzCopy'
 
 #### 1 - WHILE COM TEMPO DEFINIDO ######
 # Para definir um while com tempo, deve decomentar as três linhas abaixo e difinir abaixo o tempo desejado em minutos e comentar as linhas do while infinito.
- $sw = [diagnostics.stopwatch]::StartNew()
- $timeout = new-timespan -Minutes 1  #Aqui deve definir o tempo desejado em minutos
- while ($sw.elapsed -lt $timeout){
+$sw = [diagnostics.stopwatch]::StartNew()
+$timeout = new-timespan -Minutes 1  #Aqui deve definir o tempo desejado em minutos
+while ($sw.elapsed -lt $timeout){
 
 #### 2 - WHILE INFINITO ######
 # Para definir um while infinito, deve descomentar as duas linhas abaixo e comentar as linhas do WHILE COM TEMPO DEFINIDO.
-# while ($true){
-# $i++
+#while ($true){
+#$i++
 
 
-   $files = $null
-   cd $pasta_origem
-   gci -Recurse -Filter $tipo_arquivo  | % fullname > $consulta_arquivo
-   $files = Get-Content $consulta_arquivo
-   
-   cd $pasta_azcopy
  
-   foreach($currentfiles in $files)
-   {
-    
-        #Copiando arquivos  
-        .\AzCopy.exe /source:$pasta_origem /Dest:$pasta_azure /DestKey:$chave_azure  /S /Y /XO /Pattern:$currentfiles /V:$dest_arquivo_log
-        write-host "Arquivo:"  $currentfiles  
-              
-   }
    cd $pasta_origem
-   Get-Content  $consulta_arquivo | Remove-Item
+  
+  
+   Move-Item -Path *$tipo_arquivo -Destination $pasta_arquivos
 
+    
+  #$count = Write-Host (dir $pasta_arquivos | measure).Count
+ 
+ 
+if (Test-Path $pasta_arquivos\* -include *$tipo_arquivo ) {
+
+
+    if(Test-Path -Path $arquivo_azure_log ) {
+   
+         
+                                             }
+   
+    else {
+ 
+ 
+   New-Item -Path $arquivo_azure_log -type file  
+    
+        }
+
+
+    
+ Remove-Item "$pasta_arquivo_log\*.*" -Confirm:$false
+
+
+   cd $pasta_azcopy
+        
+       
+
+        #Copiando arquivos  
+        .\AzCopy.exe /source:$pasta_arquivos /Dest:$pasta_azure /DestKey:$chave_azure  /S /Y /XO /V:$dest_arquivo_log
+                     
+            # $arquivos_enviados = (Get-Content $dest_arquivo_log | Select-String "Finished transfer" | Measure-Object -line).Lines 
+             $arquivos_enviados = (Get-Content $dest_arquivo_log | Select-String "Finished transfer")
+       
+            #echo $arquivos_enviados > $pasta_arquivos\lote.txt 
+            #Add-Content -Path "C:\Azure\Logs\copia-azure.txt","C:\Azure\Arquivos\lote.txt" -Value $($arquivos_enviados) 
+            Add-Content -Path $pasta_arquivos\lote.log -Value $($arquivos_enviados)    
+          
+        
+                    
+      If (( get-content -Path $pasta_arquivos\lote.log) -ne $Null) {
+        
+                  #If [string]::IsNullOrEmpty( get-content -Path $pasta_arquivos\lote.log) {
+                 
+
+
+          Get-ChildItem $pasta_arquivos\*.log | select FullName, Extension, @{name='md5'; expression={(Get-FileHash $_ -Algorithm md5).Hash}} | foreach {Rename-Item $_.FullName -NewName "$($_.md5)$($_.extension)"} 
+       
+       
+        .\AzCopy.exe /source:$pasta_arquivos /Dest:$pasta_azure /DestKey:$chave_azure /S /Y /XO /V:$dest_arquivo_log         
+      
+             }  
+
+        Get-Content $dest_arquivo_log  >> $arquivo_azure_log   
+        Remove-Item  "$pasta_arquivos\*.*" -Confirm:$false
+            
+          
+      }
+
+  
  # Não comentar essa linha, isso garante que o script não consuma processamento, deixar pelo menos em 1 segundo.
   start-sleep -seconds 1
-  
- }
 
-$arquivos_enviados = (Get-Content $dest_arquivo_log | Select-String "Finished transfer" | Measure-Object -line).Lines 
-write-host "Finalizado"
-write-host "Tempo definido:" $timeout
-write-host "Tempo de execução do script:" $sw.elapsed
-write-host "Total de arquivos enviados:" $arquivos_enviados
+ }
+ 
+
+if (Test-Path $arquivo_azure_log) {
+
+    write-host "Finalizado"
+    $arquivos_enviados = (Get-Content $arquivo_azure_log | Select-String "Finished transfer" |  Select-String $tipo_arquivo | Measure-Object -line).Lines 
+    write-host "Total de arquivos:" $arquivos_enviados
+    write-host "Tempo definido:" $timeout
+    write-host "Tempo de execução do script:" $sw.elapsed
+    Remove-Item  $arquivo_azure_log -Confirm:$false
+                                  }
+    else { 
+    
+        write-host "Finalizado."
+        write-host "ATENÇÃO: Nenhum arquivo foi disponibilizado para envio."
+        write-host "Tempo definido:" $timeout
+    
+         }
