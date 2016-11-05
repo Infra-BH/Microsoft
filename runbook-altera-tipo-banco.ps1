@@ -3,6 +3,9 @@ Esse script é para ser utilzado no Runbooks no Azure para otimizar o banco em d
 Um caso de uso é criar um agendamento para o banco utilizar o plano Standard S3 no horário comercial e outro agendamento para utilizar 
 o plano Standard S0.
 Com isso conseguimos rezudir custos e ter performance somente quando necessário.
+
+- Tipo de Runbook: Fluxo de Trabalho do PowerShell
+
 #>
 
 # O nome do workflow, deve ser o mesmo do Runbook
